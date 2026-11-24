@@ -1,0 +1,46 @@
+# Sobe a API e o banco juntos com um único comando: docker compose up --build
+services:
+  # ---------- Banco de dados ----------
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ocorrencias
+      POSTGRES_PASSWORD: ocorrencias
+      POSTGRES_DB: ocorrencias
+    # Volume nomeado: os dados sobrevivem a "docker compose down".
+    # Para apagar tudo, use "docker compose down -v".
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # O banco leva alguns segundos para aceitar conexões. O healthcheck
+    # pergunta ao PostgreSQL se ele já está pronto (pg_isready).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocorrencias -d ocorrencias"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    # A porta 5432 não é exposta ao host de propósito: só a API acessa o banco,
+    # e isso evita conflito com um PostgreSQL já instalado na máquina do avaliador.
+
+  # ---------- Aplicação (API) ----------
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    # Dentro da rede do Compose, o banco é acessível pelo nome do serviço ("db"),
+    # por isso DB_HOST aponta para db e não para localhost.
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ocorrencias
+      DB_PASSWORD: ocorrencias
+      DB_NAME: ocorrencias
+    # A API só inicia depois que o healthcheck do banco passar, evitando falha de
+    # conexão logo na subida.
+    depends_on:
+      db:
+        condition: service_healthy
+    # Rede de segurança: se a API falhar ao iniciar, o Docker tenta novamente.
+    restart: on-failure
+
+volumes:
+  pgdata:

@@ -1,0 +1,21 @@
+{
+  "name": "gestao-ocorrencias-api",
+  "version": "1.0.0",
+  "description": "API REST para registro e consulta de ocorrências de risco",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
