@@ -1,6 +1,7 @@
 // CONFIGURAÇÃO DO EXPRESS
 // Aqui ficam apenas a montagem da aplicação (middlewares, rotas e tratamento de erros).
 // Nenhuma regra de negócio mora neste arquivo.
+const path = require('path');
 const express = require('express');
 const ocorrenciaRoutes = require('./routes/ocorrenciaRoutes');
 const ValidationError = require('./errors/ValidationError');
@@ -9,6 +10,10 @@ const app = express();
 
 // Middleware que lê o corpo das requisições em JSON e o coloca em req.body.
 app.use(express.json());
+
+// Serve a página de demonstração (src/public/index.html) em http://localhost:3000/.
+// É só uma interface visual: ela consome a mesma API /ocorrencias, sem alterar nenhuma regra.
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Todas as rotas de ocorrência ficam sob o prefixo /ocorrencias.
 // Se o sistema crescer (ex.: /usuarios), basta registrar outro grupo de rotas aqui.

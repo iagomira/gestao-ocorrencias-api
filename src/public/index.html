@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão de Ocorrências</title>
+<style>
+  :root { --bg:#f4f6f8; --card:#fff; --text:#1d2733; --muted:#5f6b7a; --line:#dde3ea; --primary:#2563eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12161c; --card:#1b212a; --text:#e8edf3; --muted:#9aa6b5; --line:#2c3541; --primary:#5b8def; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { margin:0 0 24px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start; }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  h2 { margin:0 0 14px; font-size:1.05rem; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:12px 0 4px; }
+  input, textarea, select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; }
+  textarea { resize:vertical; min-height:80px; }
+  button { margin-top:16px; width:100%; padding:10px; border:0; border-radius:8px; background:var(--primary); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  #mensagem { margin-top:12px; font-size:.9rem; min-height:1.2em; }
+  .erro { color:#dc2626; } .ok { color:#16a34a; }
+  .ocorrencia { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  .topo { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+  .titulo { font-weight:600; }
+  .desc { margin:6px 0 8px; }
+  .meta { font-size:.82rem; color:var(--muted); }
+  .badge { font-size:.72rem; font-weight:700; padding:3px 8px; border-radius:999px; color:#fff; white-space:nowrap; }
+  .BAIXO { background:#16a34a; } .MEDIO { background:#d97706; } .ALTO { background:#ea580c; } .CRITICO { background:#dc2626; }
+  .vazio { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Gestão de Ocorrências</h1>
+  <p class="sub">Página de demonstração que consome a API em <code>/ocorrencias</code> (GET e POST).</p>
+
+  <div class="grid">
+    <section>
+      <h2>Nova ocorrência</h2>
+      <form id="formulario">
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" placeholder="Risco elétrico">
+        <label for="descricao">Descrição *</label>
+        <textarea id="descricao" name="descricao" placeholder="Fio exposto no corredor"></textarea>
+        <label for="local">Local</label>
+        <input id="local" name="local" placeholder="Bloco A">
+        <label for="responsavel">Responsável</label>
+        <input id="responsavel" name="responsavel" placeholder="Maria">
+        <label for="nivelRisco">Nível de risco *</label>
+        <select id="nivelRisco" name="nivelRisco">
+          <option value="">Selecione…</option>
+          <option value="BAIXO">Baixo</option>
+          <option value="MEDIO">Médio</option>
+          <option value="ALTO">Alto</option>
+          <option value="CRITICO">Crítico</option>
+        </select>
+        <button type="submit" id="botao">Cadastrar (POST)</button>
+        <div id="mensagem"></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Ocorrências cadastradas (GET)</h2>
+      <div id="lista"><p class="vazio">Carregando…</p></div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const lista = document.getElementById('lista');
+  const mensagem = document.getElementById('mensagem');
+  const formulario = document.getElementById('formulario');
+  const botao = document.getElementById('botao');
+
+  function mostrarMensagem(texto, classe) {
+    mensagem.textContent = texto;
+    mensagem.className = classe;
+  }
+
+  function criarCartao(o) {
+    const cartao = document.createElement('div');
+    cartao.className = 'ocorrencia';
+
+    const topo = document.createElement('div');
+    topo.className = 'topo';
+    const titulo = document.createElement('span');
+    titulo.className = 'titulo';
+    titulo.textContent = o.titulo || '(sem título)';
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + o.nivelRisco;
+    badge.textContent = o.nivelRisco;
+    topo.append(titulo, badge);
+
+    const desc = document.createElement('div');
+    desc.className = 'desc';
+    desc.textContent = o.descricao;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const data = o.criadoEm ? new Date(o.criadoEm).toLocaleString('pt-BR') : '';
+    meta.textContent = ['#' + o.id, o.local, o.responsavel, o.status, data].filter(Boolean).join(' · ');
+
+    cartao.append(topo, desc, meta);
+    return cartao;
+  }
+
+  async function carregarOcorrencias() {
+    try {
+      const resposta = await fetch('/ocorrencias');
+      const dados = await resposta.json();
+      lista.replaceChildren();
+      if (!dados.length) {
+        lista.innerHTML = '<p class="vazio">Nenhuma ocorrência cadastrada ainda.</p>';
+        return;
+      }
+      dados.forEach((o) => lista.append(criarCartao(o)));
+    } catch {
+      lista.innerHTML = '<p class="erro">Não foi possível carregar as ocorrências.</p>';
+    }
+  }
+
+  formulario.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    botao.disabled = true;
+    mostrarMensagem('', '');
+    const corpo = Object.fromEntries(new FormData(formulario));
+    try {
+      const resposta = await fetch('/ocorrencias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      });
+      const dados = await resposta.json();
+      if (resposta.ok) {
+        mostrarMensagem('Ocorrência cadastrada (201 Created).', 'ok');
+        formulario.reset();
+        carregarOcorrencias();
+      } else {
+        const detalhes = Array.isArray(dados.detalhes) ? ' ' + dados.detalhes.join(' ') : '';
+        mostrarMensagem(resposta.status + ': ' + dados.erro + detalhes, 'erro');
+      }
+    } catch {
+      mostrarMensagem('Falha de conexão com a API.', 'erro');
+    } finally {
+      botao.disabled = false;
+    }
+  });
+
+  carregarOcorrencias();
+</script>
+</body>
+</html>
