@@ -6,9 +6,11 @@ API REST para registro e consulta de ocorrências relacionadas a riscos identifi
 
 - **Nome do sistema:** Gestão de Ocorrências (MVP 6)
 - **Integrantes do grupo:**
-  - Nome do integrante 1
-  - Nome do integrante 2
-  - Nome do integrante 3
+  - Nome do integrante Iago Mira
+  - Nome do integrante Gabriel Silva
+  - Nome do integrante Marx Maltez
+  - Nome do integrante Pedro Cézar
+    
 - **Objetivo:** centralizar o registro das ocorrências de risco feitas pelos funcionários, para que possam ser analisadas posteriormente.
 
 ## Tecnologias utilizadas
